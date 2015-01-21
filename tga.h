@@ -10,11 +10,17 @@ typedef struct tgaImage_t {
     unsigned char *data; /* points on byte array with size height*width*bpp */
 } tgaImage;
 
+enum tgaFormat {
+    GRAYSCALE = 1,
+    RGB = 3,
+    RGVA = 4
+};
+
 typedef unsigned int tgaColor;
 
 tgaColor tgaRGB(unsigned char r, unsigned char g, unsigned char b);
 
-tgaImage * tgaNewImage(unsigned int height, unsigned int width);
+tgaImage * tgaNewImage(unsigned int height, unsigned int width, int format);
 
 void tgaFreeImage(tgaImage *);
 
