@@ -27,6 +27,8 @@ tgaColor tgaRGB(unsigned char r, unsigned char g, unsigned char b)
     return 0 | (r << 16) | (g << 8) | (b << 0);
 }
 
+void load_rle_data(FILE* stream, tgaImage *image);
+
 tgaImage * tgaNewImage(unsigned int height, unsigned int width, int format)
 {
     assert(height && width); /* both must be greater then zero */
@@ -143,5 +145,58 @@ int tgaSaveToFile(tgaImage *image, const char *filename)
 
 tgaImage * tgaLoadFromFile(const char *filename)
 {
-    return NULL;
+    assert(filename);
+
+    FILE *fd = fopen(filename, "r");
+    if (!fd) {
+        return NULL;
+    }
+
+
+    struct tgaHeader header;
+    if (-1 == fread(&header, sizeof(header), 1, fd)) {
+        fclose(fd);
+        return NULL;
+    }
+
+    if (header.color_map_type == 1) {
+        fprintf(stderr, "TGA files with color map unsupported\n");
+        fclose(fd);
+        return NULL;
+    }
+    tgaImage *image = tgaNewImage(header.image_height,
+                                  header.image_width,
+                                  header.image_bpp >> 3);
+    if (!image) {
+        fclose(fd);
+        return NULL;
+    }
+    if (header.image_type == 3 || header.image_type == 2) {
+        if (-1 == fread(image->data, image->bpp, image->height * image->width, fd)) {
+            tgaFreeImage(image);
+            fclose(fd);
+            return NULL;
+        }
+    } else if (header.image_type == 11 || header.image_type == 10) {
+        fprintf(stderr, "RLE format not supported\n");
+        tgaFreeImage(image);
+        fclose(fd);
+        return NULL;
+    } else {
+        fprintf(stderr, "Unknown image type: %u\n", header.image_type);
+        tgaFreeImage(image);
+    }
+
+    if (!(header.image_descriptor & 0x20)) {
+        // vlip_vertically
+    }
+    if (!(header.image_descriptor & 0x10)) {
+        // vlip_horizontally
+    }
+
+    fclose(fd);
+    return image;
 }
+
+void load_rle_data(FILE* stream, tgaImage *image);
+
