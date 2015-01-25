@@ -6,10 +6,10 @@ LFLAGS = -lm
 
 all: render
 
-render: main.o tga.o draw.o model.o
+render: main.o tga.o draw.o model.o geometry.o
 	$(CC) $(LFLAGS) -o $@ $^
 
-main.o: main.c tga.h draw.h model.h
+main.o: main.c tga.h draw.h model.h geometry.h
 	$(CC) -c $(CFLAGS) -o $@ $<
 
 tga.o:tga.c tga.h
@@ -18,7 +18,10 @@ tga.o:tga.c tga.h
 draw.o:draw.c draw.h tga.h
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-model.o:model.c model.h
+model.o:model.c model.h geometry.h
+	$(CC) -c $(CFLAGS) -o $@ $<
+
+geometry.o:geometry.c geometry.h
 	$(CC) -c $(CFLAGS) -o $@ $<
 
 clean:

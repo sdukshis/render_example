@@ -1,7 +1,8 @@
 #ifndef MODEL_H_
 #define MODEL_H_
 
-typedef double Vec3[3];
+#include "geometry.h"
+
 typedef unsigned int Face[9];
 
 typedef struct Model {

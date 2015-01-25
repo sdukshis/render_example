@@ -52,7 +52,10 @@ Model * loadFromObj(const char *filename)
                 assert(model->textures);
             }
             Vec3 *vt = &model->textures[model->ntext];
-            assert(3 == sscanf(line + 2, "%lg %lg %lg\n", &(*vt)[0], &(*vt)[1], &(*vt)[2]));
+            (*vt)[0] = 0.0;
+            (*vt)[1] = 0.0;
+            (*vt)[2] = 0.0;
+            assert(1 < sscanf(line + 2, "%lg %lg %lg\n", &(*vt)[0], &(*vt)[1], &(*vt)[2]));
             model->ntext += 1;
         } else if (!strncmp(line, "v", 1)) {
             if (model->nvert >= vertcap) { // realloc
