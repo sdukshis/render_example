@@ -64,8 +64,9 @@ void tgaFreeImage(tgaImage *image)
 int tgaSetPixel(tgaImage *image, unsigned int x, unsigned int y, tgaColor c)
 {
     assert(image);
-    assert(x < image->height);
-    assert(y < image->width);
+    if (x >= image->width ||
+          y >= image->height)
+        return -1;
 
     unsigned char *pixel_pos = (unsigned char *)(image->data + (x + y * image->width) * image->bpp);
     memcpy(pixel_pos, &c, image->bpp);

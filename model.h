@@ -2,13 +2,16 @@
 #define MODEL_H_
 
 typedef double Vec3[3];
-typedef double Vec2[2];
-typedef unsigned int Face[3];
+typedef unsigned int Face[9];
 
 typedef struct Model {
     unsigned int nvert; // number of vertices
+    unsigned int ntext; // number of texture coords
+    unsigned int nnorm; // number of normals
     unsigned int nface; // number of faces
     Vec3 *vertices;
+    Vec3 *textures;
+    Vec3 *normals;
     Face *faces;
 } Model;
 
