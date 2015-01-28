@@ -76,12 +76,12 @@ void rasterize(tgaImage *image, Model *model, int depth)
         }
     }
 
-    tgaImage * zdump = tgaNewImage(h, w, RGB);
+    tgaImage * zdump = tgaNewImage(h, w, GRAYSCALE);
     int j;
     for (i = 0; i < w; ++i) {
         for (j = 0; j < h; ++j) {
             unsigned char color = UCHAR_MAX * (double)zbuffer[i + j*w]/(INT_MAX - INT_MIN);
-            tgaSetPixel(zdump, i, j, tgaRGB(color, color, color));
+            tgaSetPixel(zdump, i, j, color);
         }
     }
     tgaSaveToFile(zdump, "zbuffer.tga");
