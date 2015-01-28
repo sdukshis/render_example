@@ -21,7 +21,7 @@ void sub_vec3(Vec3 *c, Vec3 *a, Vec3 *b)
     (*c)[2] = (*a)[2] - (*b)[2];
 }
 
-void vec_prod(Vec3 *c, Vec3 *a, Vec3 *b)
+void cross_prod(Vec3 *c, Vec3 *a, Vec3 *b)
 {
     (*c)[0] = (*a)[1]*(*b)[2] - (*a)[2]*(*b)[1];
     (*c)[1] = (*a)[2]*(*b)[0] - (*a)[0]*(*b)[2];

@@ -9,7 +9,7 @@ void sub_vec3(Vec3 *c, Vec3 *a, Vec3 *b);
 
 double dot_prod(Vec3 *a, Vec3 *b);
 
-void vec_prod(Vec3 *c, Vec3 *a, Vec3 *b);
+void cross_prod(Vec3 *c, Vec3 *a, Vec3 *b);
 
 void normalize(Vec3 *v);
 

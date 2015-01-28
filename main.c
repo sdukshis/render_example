@@ -64,7 +64,7 @@ void rasterize(tgaImage *image, Model *model, int depth)
         Vec3 v02;
         sub_vec3(&v02, world_coords[2], world_coords[0]);
         Vec3 normale;
-        vec_prod(&normale, &v02, &v01);
+        cross_prod(&normale, &v02, &v01);
         normalize(&normale);
 
         double intensity = dot_prod(&normale, &light_dir);
