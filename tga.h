@@ -32,4 +32,8 @@ int tgaSaveToFile(tgaImage *, const char *filename);
 
 tgaImage * tgaLoadFromFile(const char *filename);
 
+void tgaFlipVertically(tgaImage *);
+
+void tgaFlipHorizontally(tgaImage *);
+
 #endif  // TGA_H_

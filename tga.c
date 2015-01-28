@@ -194,14 +194,38 @@ tgaImage * tgaLoadFromFile(const char *filename)
     }
 
     if (!(header.image_descriptor & 0x20)) {
-        // vlip_vertically
+        tgaFlipVertically(image);
     }
     if (!(header.image_descriptor & 0x10)) {
-        // vlip_horizontally
+        tgaFlipHorizontally(image);
     }
 
     fclose(fd);
     return image;
+}
+
+void tgaFlipVertically(tgaImage *image)
+{
+    assert(image);
+    unsigned int bytes_per_line = image->width * image->bpp;
+    unsigned char *line = (unsigned char *)malloc(bytes_per_line);
+    assert(line);
+    unsigned int half = image->height / 2;
+    int j;
+    for (j = 0; j < half; ++j) {
+        // swap lines
+        unsigned int l1 = j * bytes_per_line;
+        unsigned int l2 = (image->height - 1 - j) * bytes_per_line;
+        memcpy(line, image->data + l1, bytes_per_line);
+        memmove(image->data + l1, image->data + l2, bytes_per_line);
+        memcpy(image->data + l2, line, bytes_per_line);
+    }
+    free(line);
+}
+
+void tgaFlipHorizontally(tgaImage *image)
+{
+
 }
 
 int loadRLE(tgaImage *image, FILE *stream)
@@ -213,7 +237,6 @@ int loadRLE(tgaImage *image, FILE *stream)
         if (!fread(&chunk_size, sizeof(chunk_size), 1, stream)) {
             return -1;
         }
-        fprintf(stderr, "Read next chunk %u\n", chunk_size);
         if (chunk_size < 128) {
             ++chunk_size;
             if (write_buf + chunk_size * image->bpp > image->data + size) {
@@ -243,5 +266,6 @@ int loadRLE(tgaImage *image, FILE *stream)
     }
     return 0;
 }
+
 
 
