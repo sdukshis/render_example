@@ -8,7 +8,7 @@ void swap(void *a, void *b, size_t bytes)
 {
     void *t = malloc(bytes);
     memcpy(t, a, bytes);
-    memcpy(a, b, bytes);
+    memmove(a, b, bytes);
     memcpy(b, t, bytes);
     free(t);
 }

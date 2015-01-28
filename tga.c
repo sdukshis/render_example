@@ -225,7 +225,17 @@ void tgaFlipVertically(tgaImage *image)
 
 void tgaFlipHorizontally(tgaImage *image)
 {
-
+    assert(image);
+    unsigned int half = image->width / 2;
+    int i, j;
+    for (i = 0; i < half; ++i) {
+        for (j = 0; j < image->height; ++j) {
+            tgaColor c1 = tgaGetPixel(image, i, j);
+            tgaColor c2 = tgaGetPixel(image, image->width - 1 - i, j);
+            tgaSetPixel(image, i, j, c2);
+            tgaSetPixel(image, image->width - 1 -i , j, c1);
+        }
+    }
 }
 
 int loadRLE(tgaImage *image, FILE *stream)
