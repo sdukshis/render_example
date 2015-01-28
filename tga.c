@@ -27,7 +27,7 @@ tgaColor tgaRGB(unsigned char r, unsigned char g, unsigned char b)
     return 0 | (r << 16) | (g << 8) | (b << 0);
 }
 
-void load_rle_data(FILE* stream, tgaImage *image);
+static int loadRLE(tgaImage *, FILE *);
 
 tgaImage * tgaNewImage(unsigned int height, unsigned int width, int format)
 {
@@ -113,34 +113,38 @@ int tgaSaveToFile(tgaImage *image, const char *filename)
     header.image_bpp = image->bpp << 3;
     header.image_descriptor = 0x20; /* top-left origin */
 
-    if (-1 == fwrite(&header, sizeof(header), 1, fd)) {
-        fclose(fd);
-        return -1;
-    }
+    int rv = 0;
+    do {
+        if (-1 == fwrite(&header, sizeof(header), 1, fd)) {
+            rv = -1;
+            break;
+        }
 
-    unsigned int data_size = image->height * image-> width * image->bpp;
-    if (-1 == fwrite(image->data, data_size, 1, fd)) {
-        fclose(fd);
-        return -1;
-    }
+        unsigned int data_size = image->height * image-> width * image->bpp;
+        if (-1 == fwrite(image->data, data_size, 1, fd)) {
+            rv = -1;
+            break;
+        }
 
-    if (-1 == fwrite(extension_offset, sizeof(extension_offset), 1, fd)) {
-        fclose(fd);
-        return -1;
-    }
+        if (-1 == fwrite(extension_offset, sizeof(extension_offset), 1, fd)) {
+            rv = -1;
+            break;
+        }
 
-    if (-1 == fwrite(developer_offset, sizeof(developer_offset), 1, fd)) {
-        fclose(fd);
-        return -1;
-    }
+        if (-1 == fwrite(developer_offset, sizeof(developer_offset), 1, fd)) {
+            rv = -1;
+            break;
+        }
 
-    if (-1 == fwrite(new_tga_format_signature, sizeof(new_tga_format_signature), 1, fd)) {
-        fclose(fd);
-        return -1;
-    }
+        if (-1 == fwrite(new_tga_format_signature, sizeof(new_tga_format_signature), 1, fd)) {
+            rv = -1;
+            break;
+        }
+
+    } while (0);
 
     fclose(fd);
-    return 0;
+    return rv;;
 }
 
 tgaImage * tgaLoadFromFile(const char *filename)
@@ -154,7 +158,7 @@ tgaImage * tgaLoadFromFile(const char *filename)
 
 
     struct tgaHeader header;
-    if (-1 == fread(&header, sizeof(header), 1, fd)) {
+    if (1 != fread(&header, sizeof(header), 1, fd)) {
         fclose(fd);
         return NULL;
     }
@@ -172,16 +176,18 @@ tgaImage * tgaLoadFromFile(const char *filename)
         return NULL;
     }
     if (header.image_type == 3 || header.image_type == 2) {
-        if (-1 == fread(image->data, image->bpp, image->height * image->width, fd)) {
+        unsigned int size = image->height * image->width * image->bpp;
+        if (!fread(image->data, size, 1, fd)) {
             tgaFreeImage(image);
             fclose(fd);
             return NULL;
         }
     } else if (header.image_type == 11 || header.image_type == 10) {
-        fprintf(stderr, "RLE format not supported\n");
-        tgaFreeImage(image);
-        fclose(fd);
-        return NULL;
+        if (-1 == loadRLE(image, fd)) {
+            tgaFreeImage(image);
+            fclose(fd);
+            return NULL;
+        }
     } else {
         fprintf(stderr, "Unknown image type: %u\n", header.image_type);
         tgaFreeImage(image);
@@ -198,5 +204,44 @@ tgaImage * tgaLoadFromFile(const char *filename)
     return image;
 }
 
-void load_rle_data(FILE* stream, tgaImage *image);
+int loadRLE(tgaImage *image, FILE *stream)
+{
+    unsigned int size = image->height * image->width * image->bpp;
+    unsigned char *write_buf = image->data;
+    while (write_buf < image->data + size) {
+        unsigned char chunk_size = 0;
+        if (!fread(&chunk_size, sizeof(chunk_size), 1, stream)) {
+            return -1;
+        }
+        fprintf(stderr, "Read next chunk %u\n", chunk_size);
+        if (chunk_size < 128) {
+            ++chunk_size;
+            if (write_buf + chunk_size * image->bpp > image->data + size) {
+                fprintf(stderr, "Chunk size is greater then image data\n");
+                return -1;
+            }
+            if (!fread(write_buf, chunk_size * image->bpp, 1, stream)) {
+                return -1;
+            }         
+            write_buf += chunk_size * image->bpp;
+        } else {
+            chunk_size -= 127;
+            if (write_buf + chunk_size * image->bpp > image->data + size) {
+                fprintf(stderr, "Chunk size is greater then image data\n");
+                return -1;
+            }
+            tgaColor color;
+            if (!fread(&color, image->bpp, 1, stream)) {
+                return -1;
+            }
+            int i;
+            for (i = 0; i < chunk_size; ++i) {
+                memcpy(write_buf, &color, image->bpp);
+                write_buf += image->bpp;
+            }
+        }
+    }
+    return 0;
+}
+
 

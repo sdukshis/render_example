@@ -10,7 +10,10 @@ int main(int argc, char const *argv[])
     }
 
     tgaImage *image = tgaLoadFromFile(argv[1]);
-
+    if (!image) {
+        perror("tgaLoadFromFile");
+        return -1;
+    }
     tgaSaveToFile(image, argv[2]);
     
     tgaFreeImage(image);
