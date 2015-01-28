@@ -101,6 +101,11 @@ int main(int argc, char const *argv[])
         perror("loadFromObj");
         return -1;
     }
+    if (loadDiffuseMap(model, "obj/african_head_diffuse.tga")) {
+        perror("loadDiffuseMap");
+        freeModel(model);
+        return -1;
+    }
     printf("model with %d vertices, %d faces loaded\n", model->nvert, model->nface);
     int rv = 0;
 

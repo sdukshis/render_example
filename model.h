@@ -2,6 +2,7 @@
 #define MODEL_H_
 
 #include "geometry.h"
+#include "tga.h"
 
 typedef unsigned int Face[9];
 
@@ -14,9 +15,16 @@ typedef struct Model {
     Vec3 *textures;
     Vec3 *normals;
     Face *faces;
+    tgaImage *diffuse_map;
+    tgaImage *normal_map;
+    tgaImage *specular_map;
 } Model;
 
 Model * loadFromObj(const char *filename);
+
+int loadDiffuseMap(Model *model, const char *filename);
+int loadNormalMap(Model *model, const char *filename);
+int loadSpecularMap(Model *model, const char *filename);
 
 void freeModel(Model *);
 

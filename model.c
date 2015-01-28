@@ -20,6 +20,9 @@ Model * loadFromObj(const char *filename)
     model->ntext = 0;
     model->nnorm = 0;
     model->nface = 0;
+    model->diffuse_map = NULL;
+    model->normal_map = NULL;
+    model->specular_map = NULL;
 
     size_t vertcap = 1;
     size_t textcap = 1;
@@ -105,6 +108,30 @@ Model * loadFromObj(const char *filename)
     return model;
 }
 
+int loadDiffuseMap(Model *model, const char *filename)
+{
+    assert(model);
+    assert(filename);
+    model->diffuse_map = tgaLoadFromFile(filename);
+    return model->diffuse_map != NULL;
+}
+
+int loadNormalMap(Model *model, const char *filename)
+{
+    assert(model);
+    assert(filename);
+    model->normal_map = tgaLoadFromFile(filename);
+    return model->normal_map != NULL;
+}
+
+int loadSpecularMap(Model *model, const char *filename)
+{
+    assert(model);
+    assert(filename);
+    model->specular_map = tgaLoadFromFile(filename);
+    return model->specular_map != NULL;
+}
+
 void freeModel(Model *model)
 {
     assert(model);
@@ -117,5 +144,11 @@ void freeModel(Model *model)
         free(model->normals);
     if (model->faces)
         free(model->faces);
+    if (model->diffuse_map)
+        tgaFreeImage(model->diffuse_map);
+    if (model->normal_map)
+        tgaFreeImage(model->normal_map);
+    if (model->specular_map)
+        tgaFreeImage(model->specular_map);
     free(model);
 }
