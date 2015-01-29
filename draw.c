@@ -117,7 +117,7 @@ void triangle(Vec3i *p1, Vec3i *p2, Vec3i *p3,
             }
             P[0] = j; P[1] = (*p1)[1] + i; // hack to fill holes (due to int cast precision problems)
             int idx = j + ((*p1)[1] + i) * image->width;
-            if (zbuffer[idx] < P[2]) {
+            if (idx < image->height * image->width && zbuffer[idx] < P[2]) {
                 zbuffer[idx] = P[2];
                 tgaColor color = getDiffuseColor(model, &uv);
                 tgaSetPixel(image, P[0], P[1], tgaRGB(intensity * Red(color),
