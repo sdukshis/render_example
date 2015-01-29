@@ -50,6 +50,40 @@ void projection(Mat4 *m, double c)
     setM(m, 3, 2, -1.0/c);
 }
 
+void viewport(Mat4 *m, unsigned int x, unsigned int y,
+                       unsigned int width, unsigned int height,
+                       unsigned int depth)
+{
+    identity(m);
+    setM(m, 0, 0, width / 2.0);
+    setM(m, 1, 1, height / 2.0);
+    setM(m, 2, 2, depth / 2.0);
+
+    setM(m, 0, 3, x + width / 2.0);
+    setM(m, 1, 3, -y + height / 2.0);
+    setM(m, 2, 3, depth / 2.0);
+}
+
+void lookat(Mat4 *m, Vec3 *eye, Vec3 *center, Vec3 *up)
+{
+    Vec3 x, y, z;
+    sub_vec3(&z, eye, center);
+    normalize(&z);
+    cross_prod(&x, up, &z);
+    normalize(&x);
+    cross_prod(&y, &z, &x);
+    normalize(&y);
+
+    identity(m);
+    int i = 0;
+    for (i = 0; i < 3; ++i) {
+        setM(m, 0, i, x[i]);
+        setM(m, 1, i, y[i]);
+        setM(m, 2, i, z[i]);
+        setM(m, i, 3, -(*center)[i]);
+    }
+}
+
 void rasterize(tgaImage *image, Model *model, int depth)
 {
     assert(image);
@@ -63,10 +97,19 @@ void rasterize(tgaImage *image, Model *model, int depth)
         zbuffer[i] = INT_MIN;
     }
     Vec3 light_dir = {0, 0, -1.0};
+    Vec3 eye = {1, 1, 3};
+    Vec3 center = {0, 0, 0};
     Vec3 camera = {0, 0, 3.0};
+    Vec3 up = {0, 1, 0};
 
     Mat4 Projection;
+    Mat4 ViewPort;
+    Mat4 ModelView;
+    Mat4 Transform;
     projection(&Projection, camera[2]);
+    lookat(&ModelView, &eye, &center, &up);
+    // projection(&ViewPort, 0, 0, width, height, depth);
+    mulMM(&Transform, &ModelView, &Projection);
 
     for (i = 0; i < model->nface; ++i) {
         int j;
@@ -79,7 +122,7 @@ void rasterize(tgaImage *image, Model *model, int depth)
         for (j = 0; j < 3; ++j) {
             vertex_coords = getVertex(model, i, j);
             Vec3to4(&coords, vertex_coords);
-            mulMV(&proj_coords, &Projection, &coords);
+            mulMV(&proj_coords, &Transform, &coords);
             Vec4to3(&world_coords[j], &proj_coords);
             screen_coords[j][0] = (world_coords[j][0] + 1) * w / 2;
             screen_coords[j][1] = (1 - world_coords[j][1]) * h / 2;
