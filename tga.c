@@ -27,6 +27,21 @@ tgaColor tgaRGB(unsigned char r, unsigned char g, unsigned char b)
     return 0 | (r << 16) | (g << 8) | (b << 0);
 }
 
+unsigned char Red(tgaColor c)
+{
+    return c >> 16;
+}
+
+unsigned char Blue(tgaColor c)
+{
+    return c >> 8;
+}
+
+unsigned char Green(tgaColor c)
+{
+    return c >> 0;
+}
+
 static int loadRLE(tgaImage *, FILE *);
 
 tgaImage * tgaNewImage(unsigned int height, unsigned int width, int format)
@@ -81,9 +96,11 @@ tgaColor tgaGetPixel(tgaImage *image, unsigned int x, unsigned int y)
     assert(x < image->height);
     assert(y < image->width);
 
-    unsigned char *pixel_pos = (unsigned char *)(image->data + (x + y * image->width) * image->bpp);
+    unsigned char *pixel_pos = image->data + (x + y * image->width) * image->bpp;
 
-    return *(tgaColor *)pixel_pos; 
+    tgaColor color;
+    memcpy(&color, pixel_pos, image->bpp);
+    return color; 
 }
 
 int tgaSaveToFile(tgaImage *image, const char *filename)
@@ -155,7 +172,6 @@ tgaImage * tgaLoadFromFile(const char *filename)
         return NULL;
     }
 
-
     struct tgaHeader header;
     if (1 != fread(&header, sizeof(header), 1, fd)) {
         fclose(fd);
@@ -187,6 +203,7 @@ tgaImage * tgaLoadFromFile(const char *filename)
             fclose(fd);
             return NULL;
         }
+
     } else {
         fprintf(stderr, "Unknown image type: %u\n", header.image_type);
         tgaFreeImage(image);
@@ -232,7 +249,7 @@ void tgaFlipHorizontally(tgaImage *image)
             tgaColor c1 = tgaGetPixel(image, i, j);
             tgaColor c2 = tgaGetPixel(image, image->width - 1 - i, j);
             tgaSetPixel(image, i, j, c2);
-            tgaSetPixel(image, image->width - 1 -i , j, c1);
+            tgaSetPixel(image, image->width - 1 - i , j, c1);
         }
     }
 }

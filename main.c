@@ -52,11 +52,13 @@ void rasterize(tgaImage *image, Model *model, int depth)
         int j;
         Vec3 *world_coords[3];
         Vec3i screen_coords[3];
+        Vec3 *uv[3];
         for (j = 0; j < 3; ++j) {
-            world_coords[j] = &(model->vertices[model->faces[i][3*j]]);
+            world_coords[j] = getVertex(model, i, j);
             screen_coords[j][0] = ((*world_coords[j])[0] + 1) * w / 2;
             screen_coords[j][1] = (1 - (*world_coords[j])[1]) * h / 2;
             screen_coords[j][2] = ((*world_coords[j])[2] + 1) * depth / 2;
+            uv[j] = getDiffuseUV(model, i, j);
         }
 
         Vec3 v01;
@@ -70,9 +72,11 @@ void rasterize(tgaImage *image, Model *model, int depth)
         double intensity = dot_prod(&normale, &light_dir);
         if (intensity > 0) {
             triangle(&screen_coords[0], &screen_coords[1], &screen_coords[2],
+                     uv[0], uv[1], uv[2],
                      image,
-                     tgaRGB(255 * intensity, 255 * intensity, 255 * intensity),
-                     zbuffer);        
+                     intensity,
+                     zbuffer,
+                     model);        
         }
     }
 
@@ -91,8 +95,8 @@ void rasterize(tgaImage *image, Model *model, int depth)
 
 int main(int argc, char const *argv[])
 {
-    if (argc < 3) {
-        fprintf(stderr, "Usage: %s <objfile> <outfile>\n", argv[0]);
+    if (argc < 4) {
+        fprintf(stderr, "Usage: %s <objfile> <texture> <outfile>\n", argv[0]);
         return -1;
     }
 
@@ -101,7 +105,7 @@ int main(int argc, char const *argv[])
         perror("loadFromObj");
         return -1;
     }
-    if (loadDiffuseMap(model, "obj/african_head_diffuse.tga")) {
+    if (!loadDiffuseMap(model, argv[2])) {
         perror("loadDiffuseMap");
         freeModel(model);
         return -1;
@@ -117,7 +121,7 @@ int main(int argc, char const *argv[])
     // meshgrid(image, model);
     rasterize(image, model, /* depth = */ 255);
 
-    if (-1 == tgaSaveToFile(image, argv[2])) {
+    if (-1 == tgaSaveToFile(image, argv[3])) {
         perror("tgaSateToFile");
         rv = -1;
     }

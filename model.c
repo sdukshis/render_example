@@ -113,6 +113,9 @@ int loadDiffuseMap(Model *model, const char *filename)
     assert(model);
     assert(filename);
     model->diffuse_map = tgaLoadFromFile(filename);
+    if (model->diffuse_map) {
+        tgaFlipVertically(model->diffuse_map);
+    }
     return model->diffuse_map != NULL;
 }
 
@@ -131,6 +134,44 @@ int loadSpecularMap(Model *model, const char *filename)
     model->specular_map = tgaLoadFromFile(filename);
     return model->specular_map != NULL;
 }
+
+Vec3 *getVertex(Model *model, unsigned int nface, unsigned int nvert)
+{
+    assert(model);
+    assert(nface < model->nface);
+    assert(nvert < 3);
+
+    return &model->vertices[model->faces[nface][0 + nvert * 3]];  
+}
+
+Vec3 *getDiffuseUV(Model *model, unsigned int nface, unsigned int nvert)
+{
+    assert(model);
+    assert(nface < model->nface);
+    assert(nvert < 3);
+
+    if (!model->textures) {
+        fprintf(stderr, "uv not loaded\n");
+        return NULL;
+    }    
+
+    return &model->textures[model->faces[nface][1 + nvert * 3]];
+}
+
+tgaColor getDiffuseColor(Model *model, Vec3 *uv)
+{
+    assert(model);
+    assert(uv);
+
+    if (!model->diffuse_map) {
+        fprintf(stderr, "Diffuse map not loaded\n");
+        return tgaRGB(255, 255, 255);
+    }
+    unsigned int h = model->diffuse_map->height;
+    unsigned int w = model->diffuse_map->width;
+    return tgaGetPixel(model->diffuse_map, w * (*uv)[0], h * (*uv)[1]);
+}
+
 
 void freeModel(Model *model)
 {

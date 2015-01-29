@@ -13,12 +13,18 @@ typedef struct tgaImage_t {
 enum tgaFormat {
     GRAYSCALE = 1,
     RGB = 3,
-    RGVA = 4
+    RGBA = 4
 };
 
 typedef unsigned int tgaColor;
 
 tgaColor tgaRGB(unsigned char r, unsigned char g, unsigned char b);
+
+unsigned char Red(tgaColor);
+
+unsigned char Blue(tgaColor);
+
+unsigned char Green(tgaColor);
 
 tgaImage * tgaNewImage(unsigned int height, unsigned int width, int format);
 
