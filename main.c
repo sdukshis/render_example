@@ -34,6 +34,32 @@ void meshgrid(tgaImage *image, Model *model)
     }
 }
 
+void identity(Mat4 *m)
+{
+    int i, j;
+    for (i = 0; i < 4; ++i) {
+        for (j = 0; j < 4; ++j) {
+            setM(m, i, j, i == j ? 1.0 : 0.0);
+        }
+    }
+}
+
+void projection(Mat4 *m, double c)
+{
+    identity(m);
+    setM(m, 3, 2, -1/c);
+}
+
+void printVec3i(Vec3i *v)
+{
+    printf("(%d, %d, %d)", (*v)[0], (*v)[1], (*v)[2]);
+}
+
+void printVec3(Vec3 *v)
+{
+    printf("(%g, %g, %g)", (*v)[0], (*v)[1], (*v)[2]);
+}
+
 void rasterize(tgaImage *image, Model *model, int depth)
 {
     assert(image);
@@ -48,16 +74,25 @@ void rasterize(tgaImage *image, Model *model, int depth)
     }
     Vec3 light_dir = {0, 0, -1};
 
+    Mat4 Projection;
+    projection(&Projection, 20.0);
+
     for (i = 0; i < model->nface; ++i) {
         int j;
+        Vec3 *vertex_coords;
+        Vec4 coords;
+        Vec4 proj_coords;
         Vec3 *world_coords[3];
         Vec3i screen_coords[3];
         Vec3 *uv[3];
         for (j = 0; j < 3; ++j) {
             world_coords[j] = getVertex(model, i, j);
-            screen_coords[j][0] = ((*world_coords[j])[0] + 1) * w / 2;
-            screen_coords[j][1] = (1 - (*world_coords[j])[1]) * h / 2;
-            screen_coords[j][2] = ((*world_coords[j])[2] + 1) * depth / 2;
+            // Vec3to4(&coords, vertex_coords);
+            // mulMV(&proj_coords, &Projection, &coords);
+            // Vec4to3(&world_coords[j], &proj_coords);
+            screen_coords[j][0] = ((*world_coords)[j][0] + 1) * w / 2;
+            screen_coords[j][1] = (1 - (*world_coords)[j][1]) * h / 2;
+            screen_coords[j][2] = ((*world_coords)[j][2] + 1) * depth / 2;
             uv[j] = getDiffuseUV(model, i, j);
         }
 
@@ -76,7 +111,7 @@ void rasterize(tgaImage *image, Model *model, int depth)
                      image,
                      intensity,
                      zbuffer,
-                     model);        
+                     model);
         }
     }
 
