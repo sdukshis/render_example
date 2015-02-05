@@ -58,7 +58,7 @@ Model * loadFromObj(const char *filename)
             (*vt)[0] = 0.0;
             (*vt)[1] = 0.0;
             (*vt)[2] = 0.0;
-            assert(1 < sscanf(line + 2, "%lg %lg %lg\n", &(*vt)[0], &(*vt)[1], &(*vt)[2]));
+            assert(1 < sscanf(line + 2, "%lg %lg\n", &(*vt)[0], &(*vt)[1]));
             model->ntext += 1;
         } else if (!strncmp(line, "v", 1)) {
             if (model->nvert >= vertcap) { // realloc
@@ -156,6 +156,20 @@ Vec3 *getDiffuseUV(Model *model, unsigned int nface, unsigned int nvert)
     }    
 
     return &model->textures[model->faces[nface][1 + nvert * 3]];
+}
+
+Vec3 * getNorm(Model *model, unsigned int nface, unsigned int nvert)
+{
+    assert(model);
+    assert(nface < model->nface);
+    assert(nvert < 3);
+
+    if (!model->normals) {
+        fprintf(stderr, "normals not loaded\n");
+        return NULL;
+    }    
+
+    return &model->normals[model->faces[nface][2 + nvert * 3]];
 }
 
 tgaColor getDiffuseColor(Model *model, Vec3 *uv)

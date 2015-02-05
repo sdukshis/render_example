@@ -107,7 +107,9 @@ void rasterize(tgaImage *image, Model *model, int depth)
     Mat4 ModelView;
     Mat4 Transform;
     projection(&Projection, camera[2]);
+    // identity(&Projection);
     lookat(&ModelView, &eye, &center, &up);
+    // identity(&ModelView);
     // projection(&ViewPort, 0, 0, width, height, depth);
     mulMM(&Transform, &ModelView, &Projection);
 
@@ -116,9 +118,10 @@ void rasterize(tgaImage *image, Model *model, int depth)
         Vec3 *vertex_coords;
         Vec4 coords;
         Vec4 proj_coords;
-        Vec3 world_coords[3];
         Vec3i screen_coords[3];
+        Vec3 world_coords[3];
         Vec3 *uv[3];
+        double intensity[3];
         for (j = 0; j < 3; ++j) {
             vertex_coords = getVertex(model, i, j);
             Vec3to4(&coords, vertex_coords);
@@ -128,6 +131,15 @@ void rasterize(tgaImage *image, Model *model, int depth)
             screen_coords[j][1] = (1 - world_coords[j][1]) * h / 2;
             screen_coords[j][2] = (world_coords[j][2] + 1) * depth / 2;
             uv[j] = getDiffuseUV(model, i, j);
+            // TODO: remove norm
+            Vec3 norm;
+            Vec3 *n = getNorm(model, i, j);
+            int k;
+            for (k = 0; k < 3; ++k) {
+                norm[k] = -(*n)[k];
+            }
+            // normalize(&norm);
+            intensity[j] = dot_prod(&norm, &light_dir);
         }
 
         Vec3 v01;
@@ -138,15 +150,13 @@ void rasterize(tgaImage *image, Model *model, int depth)
         cross_prod(&normale, &v02, &v01);
         normalize(&normale);
 
-        double intensity = dot_prod(&normale, &light_dir);
-        if (intensity > 0) {
-            triangle(&screen_coords[0], &screen_coords[1], &screen_coords[2],
-                     uv[0], uv[1], uv[2],
-                     image,
-                     intensity,
-                     zbuffer,
-                     model);
-        }
+        // double intensity = dot_prod(&normale, &light_dir);
+        triangle(&screen_coords[0], &screen_coords[1], &screen_coords[2],
+                 uv[0], uv[1], uv[2],
+                 intensity[0], intensity[1], intensity[2],
+                 image,
+                 zbuffer,
+                 model);
     }
 
     tgaImage * zdump = tgaNewImage(h, w, GRAYSCALE);

@@ -93,8 +93,8 @@ int tgaSetPixel(tgaImage *image, unsigned int x, unsigned int y, tgaColor c)
 tgaColor tgaGetPixel(tgaImage *image, unsigned int x, unsigned int y)
 {
     assert(image);
-    assert(x < image->height);
-    assert(y < image->width);
+    assert(x < image->width);
+    assert(y < image->height);
 
     unsigned char *pixel_pos = image->data + (x + y * image->width) * image->bpp;
 

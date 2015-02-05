@@ -12,6 +12,7 @@ void line(unsigned int x1, unsigned int y1,
 
 void triangle(Vec3i *p1, Vec3i *p2, Vec3i *p3,
               Vec3 *uv1, Vec3 *uv2, Vec3 *uv3,
-              tgaImage *image, double intensity,
+              double intty1, double intty2, double intty3,
+              tgaImage *image,
               int *zbuffer, Model *model);
 #endif  // DRAW_H_

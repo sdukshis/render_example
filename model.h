@@ -26,9 +26,11 @@ int loadDiffuseMap(Model *model, const char *filename);
 int loadNormalMap(Model *model, const char *filename);
 int loadSpecularMap(Model *model, const char *filename);
 
-Vec3 *getDiffuseUV(Model *model, unsigned int nface, unsigned int nvert);
+Vec3 * getDiffuseUV(Model *model, unsigned int nface, unsigned int nvert);
 
-Vec3 *getVertex(Model *model, unsigned int nface, unsigned int nvert);
+Vec3 * getVertex(Model *model, unsigned int nface, unsigned int nvert);
+
+Vec3 * getNorm(Model *model, unsigned int nface, unsigned int nvert);
 
 tgaColor getDiffuseColor(Model *model, Vec3 *uv);
 
