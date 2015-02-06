@@ -110,8 +110,10 @@ void rasterize(tgaImage *image, Model *model, int depth)
     // identity(&Projection);
     lookat(&ModelView, &eye, &center, &up);
     // identity(&ModelView);
-    // projection(&ViewPort, 0, 0, width, height, depth);
-    mulMM(&Transform, &ModelView, &Projection);
+    viewport(&ViewPort, 0, 0, w, h, depth);
+    Mat4 MP;
+    mulMM(&MP, &ModelView, &Projection);
+    mulMM(&Transform, &ViewPort, &MP);
 
     for (i = 0; i < model->nface; ++i) {
         int j;
@@ -127,30 +129,13 @@ void rasterize(tgaImage *image, Model *model, int depth)
             Vec3to4(&coords, vertex_coords);
             mulMV(&proj_coords, &Transform, &coords);
             Vec4to3(&world_coords[j], &proj_coords);
-            screen_coords[j][0] = (world_coords[j][0] + 1) * w / 2;
-            screen_coords[j][1] = (1 - world_coords[j][1]) * h / 2;
-            screen_coords[j][2] = (world_coords[j][2] + 1) * depth / 2;
+            screen_coords[j][0] = world_coords[j][0];
+            screen_coords[j][1] = world_coords[j][1];
+            screen_coords[j][2] = world_coords[j][2];
             cpy_vec3(&uv[j], getDiffuseUV(model, i, j));
-            // TODO: remove norm
-            Vec3 norm;
-            Vec3 *n = getNorm(model, i, j);
-            int k;
-            for (k = 0; k < 3; ++k) {
-                norm[k] = -(*n)[k];
-            }
-            // normalize(&norm);
-            intensity[j] = dot_prod(&norm, &light_dir);
+            intensity[j] = dot_prod(getNorm(model, i, j), &light_dir);
         }
 
-        Vec3 v01;
-        sub_vec3(&v01, &world_coords[1], &world_coords[0]);
-        Vec3 v02;
-        sub_vec3(&v02, &world_coords[2], &world_coords[0]);
-        Vec3 normale;
-        cross_prod(&normale, &v02, &v01);
-        normalize(&normale);
-
-        // double intensity = dot_prod(&normale, &light_dir);
         triangle(screen_coords,
                  uv,
                  &intensity,
@@ -159,16 +144,6 @@ void rasterize(tgaImage *image, Model *model, int depth)
                  model);
     }
 
-    tgaImage * zdump = tgaNewImage(h, w, GRAYSCALE);
-    int j;
-    for (i = 0; i < w; ++i) {
-        for (j = 0; j < h; ++j) {
-            unsigned char color = UCHAR_MAX * (double)zbuffer[i + j*w]/(INT_MAX - INT_MIN);
-            tgaSetPixel(zdump, i, j, color);
-        }
-    }
-    tgaSaveToFile(zdump, "zbuffer.tga");
-    tgaFreeImage(zdump);
     free(zbuffer);
 }
 
@@ -200,6 +175,7 @@ int main(int argc, char const *argv[])
     // meshgrid(image, model);
     rasterize(image, model, /* depth = */ 255);
 
+    tgaFlipVertically(image);
     if (-1 == tgaSaveToFile(image, argv[3])) {
         perror("tgaSateToFile");
         rv = -1;
