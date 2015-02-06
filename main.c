@@ -120,8 +120,8 @@ void rasterize(tgaImage *image, Model *model, int depth)
         Vec4 proj_coords;
         Vec3i screen_coords[3];
         Vec3 world_coords[3];
-        Vec3 *uv[3];
-        double intensity[3];
+        Vec3 uv[3];
+        Vec3 intensity;
         for (j = 0; j < 3; ++j) {
             vertex_coords = getVertex(model, i, j);
             Vec3to4(&coords, vertex_coords);
@@ -130,7 +130,7 @@ void rasterize(tgaImage *image, Model *model, int depth)
             screen_coords[j][0] = (world_coords[j][0] + 1) * w / 2;
             screen_coords[j][1] = (1 - world_coords[j][1]) * h / 2;
             screen_coords[j][2] = (world_coords[j][2] + 1) * depth / 2;
-            uv[j] = getDiffuseUV(model, i, j);
+            cpy_vec3(&uv[j], getDiffuseUV(model, i, j));
             // TODO: remove norm
             Vec3 norm;
             Vec3 *n = getNorm(model, i, j);
@@ -151,9 +151,9 @@ void rasterize(tgaImage *image, Model *model, int depth)
         normalize(&normale);
 
         // double intensity = dot_prod(&normale, &light_dir);
-        triangle(&screen_coords[0], &screen_coords[1], &screen_coords[2],
-                 uv[0], uv[1], uv[2],
-                 intensity[0], intensity[1], intensity[2],
+        triangle(screen_coords,
+                 uv,
+                 &intensity,
                  image,
                  zbuffer,
                  model);

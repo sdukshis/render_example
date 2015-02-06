@@ -7,6 +7,8 @@ typedef double Mat4[16];
 
 void add_vec3(Vec3 *c, Vec3 *a, Vec3 *b);
 
+void cpy_vec3(Vec3 *a, Vec3 *b);
+
 void sub_vec3(Vec3 *c, Vec3 *a, Vec3 *b);
 
 double dot_prod(Vec3 *a, Vec3 *b);
@@ -26,5 +28,6 @@ void mulMV(Vec4 *c, Mat4 *a, Vec4 *b);
 void setM(Mat4 *m, unsigned int i, unsigned int j, double val);
 
 double getM(Mat4 *m, unsigned int i, unsigned int j);
+
 
 #endif  // GEOMETRY_H_

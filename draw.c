@@ -4,6 +4,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
+
+#define MAX(a,b) ((a) > (b) ? a : b)
+#define MIN(a,b) ((a) < (b) ? a : b)
 
 void swap(void *a, void *b, size_t bytes)
 {
@@ -65,13 +69,68 @@ void line(unsigned int x1, unsigned int y1,
     }
 }
 
-void triangle(Vec3i *p1, Vec3i *p2, Vec3i *p3,
-              Vec3 *uv1, Vec3 *uv2, Vec3 *uv3,
-              double intty1, double intty2, double intty3,
+void barycentric(Vec3 *bar, Vec3i *pts, Vec3i *p)
+{
+    Vec3 v = {pts[2][0] - pts[0][0], pts[1][0] - pts[0][0], pts[0][0] - (*p)[0]};
+    Vec3 w = {pts[2][1] - pts[0][1], pts[1][1] - pts[0][1], pts[0][1] - (*p)[1]};
+    Vec3 u = {0.0, 0.0, 0.0};
+    cross_prod(&u, &v, &w);
+    if (fabs(u[2]) < 1.0) { // triangle is degenerate 
+        (*bar)[0] = -1.0; (*bar)[1] = 1.0; (*bar)[2] = 1.0;
+    } else {
+        (*bar)[0] = 1.0 - (u[0] + u[1])/u[2];
+        (*bar)[1] = u[1]/u[2];
+        (*bar)[2] = u[0]/u[2];
+    }
+}
+
+void triangle(Vec3i *pts,
+              Vec3 *uv,
+              Vec3 *intty,
               tgaImage *image,
               int *zbuffer, Model *model)
 {
-    
+    Vec3i bboxmin = {image->width - 1, image->height - 1, 0};
+    Vec3i bboxmax = {0, 0, 0};
+    Vec3i clamp = {image->width - 1, image->height - 1, 0};
+
+    int i, j;
+    for (i = 0; i < 3; ++i) {
+        for (j = 0; j < 2; ++j) {
+            bboxmin[j] = MAX(0,        MIN(bboxmin[j], pts[i][j]));
+            bboxmax[j] = MIN(clamp[j], MAX(bboxmax[j], pts[i][j]));
+        }
+    }
+
+    Vec3i P;
+    for (P[0] = bboxmin[0]; P[0] <= bboxmax[0]; ++P[0]) {
+        for (P[1] = bboxmin[1]; P[1] <= bboxmax[1]; ++P[1]) {
+            Vec3 bc_screen;
+            barycentric(&bc_screen, pts, &P);
+            if (bc_screen[0] < 0.0 || bc_screen[1] < 0.0 || bc_screen[2] < 0.0) {
+                continue;
+            }
+            Vec3 z_coords = {pts[0][2], pts[1][2], pts[2][2]};
+            double z = dot_prod(&z_coords, &bc_screen);
+            int idx = P[0] + P[1]*image->width;
+            if (zbuffer[idx] > z) {
+                continue;
+            }
+            zbuffer[idx] = z;
+            double intensity = MAX(1.0 ,dot_prod(intty, &bc_screen));
+            Vec3 uvx = {uv[0][0], uv[1][0], uv[2][0]};
+            Vec3 uvy = {uv[0][1], uv[1][1], uv[2][1]};
+            Vec3 uv_coords = {dot_prod(&uvx, &bc_screen),
+                              dot_prod(&uvy, &bc_screen),
+                              0};
+            tgaColor color = getDiffuseColor(model, &uv_coords);
+
+            tgaSetPixel(image, P[0], P[1], tgaRGB(Red(color)*intensity,
+                                                  Green(color)*intensity,
+                                                  Blue(color)*intensity));
+        }
+    }
+#if 0
     if ((*p1)[1] == (*p2)[1] && (*p1)[1] == (*p3)[1])
         return;
     if ((*p1)[1] > (*p2)[1]) {
@@ -140,5 +199,6 @@ void triangle(Vec3i *p1, Vec3i *p2, Vec3i *p3,
             }
         }
     }
+#endif
 }
 

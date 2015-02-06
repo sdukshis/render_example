@@ -115,6 +115,7 @@ int loadDiffuseMap(Model *model, const char *filename)
     model->diffuse_map = tgaLoadFromFile(filename);
     if (model->diffuse_map) {
         tgaFlipVertically(model->diffuse_map);
+        tgaFlipHorizontally(model->diffuse_map);
     }
     return model->diffuse_map != NULL;
 }

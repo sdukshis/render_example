@@ -34,12 +34,12 @@ unsigned char Red(tgaColor c)
 
 unsigned char Blue(tgaColor c)
 {
-    return c >> 8;
+    return c >> 0;
 }
 
 unsigned char Green(tgaColor c)
 {
-    return c >> 0;
+    return c >> 8;
 }
 
 static int loadRLE(tgaImage *, FILE *);
