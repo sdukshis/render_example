@@ -20,16 +20,16 @@ void meshgrid(tgaImage *image, Model *model)
         Vec3 *v1 = &(model->vertices[model->faces[i][3]]);
         Vec3 *v2 = &(model->vertices[model->faces[i][6]]);
 
-        line(((*v0)[0] + 1) * w / 2,(1 - (*v0)[1]) * h / 2,
-             ((*v1)[0] + 1) * w / 2,(1 - (*v1)[1]) * h / 2,
+        line(((*v0)[0] + 1) * w / 2,(1 + (*v0)[1]) * h / 2,
+             ((*v1)[0] + 1) * w / 2,(1 + (*v1)[1]) * h / 2,
              image, tgaRGB(255, 255, 255));
 
-        line(((*v1)[0] + 1) * w / 2,(1 - (*v1)[1]) * h / 2,
-             ((*v2)[0] + 1) * w / 2,(1 - (*v2)[1]) * h / 2,
+        line(((*v1)[0] + 1) * w / 2,(1 + (*v1)[1]) * h / 2,
+             ((*v2)[0] + 1) * w / 2,(1 + (*v2)[1]) * h / 2,
              image, tgaRGB(255, 255, 255));
 
-        line(((*v2)[0] + 1) * w / 2,(1 - (*v2)[1]) * h / 2,
-             ((*v0)[0] + 1) * w / 2,(1 - (*v0)[1]) * h / 2,
+        line(((*v2)[0] + 1) * w / 2,(1 + (*v2)[1]) * h / 2,
+             ((*v0)[0] + 1) * w / 2,(1 + (*v0)[1]) * h / 2,
              image, tgaRGB(255, 255, 255));
     }
 }
@@ -84,7 +84,58 @@ void lookat(Mat4 *m, Vec3 *eye, Vec3 *center, Vec3 *up)
     }
 }
 
-void rasterize(tgaImage *image, Model *model, int depth)
+Vec3 light_dir = {0.0, 0.0, 1.0};
+Vec3 eye = {1, 1, 3};
+Vec3 center = {0, 0, 0};
+Vec3 camera = {0, 0, 3.0};
+Vec3 up = {0, 1, 0};
+
+Mat4 Projection;
+Mat4 ViewPort;
+Mat4 ModelView;
+Mat4 Transform;
+
+typedef struct gouraud_shader_t {
+    Model *model;
+    Vec3 varying_intensity;
+    Vec3 varying_uv[3];
+} gouraud_shader;
+
+void gouraud_vertex_shader(Vec3 *sc, int face, int vert, void *state)
+{
+    gouraud_shader *sh = (gouraud_shader *)state;
+    sh->varying_intensity[vert] = MAX(0.0, dot_prod(getNorm(sh->model, face, vert),
+                                                    &light_dir));
+    cpy_vec3(&(sh->varying_uv[vert]), getDiffuseUV(sh->model, face, vert));
+    
+    Vec3 *vertex_coords = getVertex(sh->model, face, vert);
+    Vec4 coords;
+    Vec4 world_coords;
+    Vec3to4(&coords, vertex_coords);
+    mulMV(&world_coords, &Transform, &coords);
+    Vec4to3(sc, &world_coords);
+}
+
+int gouraud_fragment_shader(tgaColor *color, Vec3 *bar, void *state)
+{
+    gouraud_shader *sh = (gouraud_shader *)state;
+    double intensity = MIN(1.0 ,dot_prod(&(sh->varying_intensity), bar));
+    Vec3 *uv = sh->varying_uv;
+    Vec3 uvx = {uv[0][0], uv[1][0], uv[2][0]};
+    Vec3 uvy = {uv[0][1], uv[1][1], uv[2][1]};
+    Vec3 uv_coords = {dot_prod(&uvx, bar),
+                      dot_prod(&uvy, bar),
+                      0};
+    tgaColor color_uv = getDiffuseColor(sh->model, &uv_coords);
+    *color = tgaRGB(Red(color_uv) * intensity,
+                    Green(color_uv) * intensity,
+                    Blue(color_uv) * intensity);
+    return 1;
+}
+
+void rasterize(tgaImage *image, Model *model,
+               vertex_shader vs, fragment_shader fs,
+               void *shader)
 {
     assert(image);
     assert(model);
@@ -96,52 +147,20 @@ void rasterize(tgaImage *image, Model *model, int depth)
     for (i = 0; i < h * w; ++i) {
         zbuffer[i] = INT_MIN;
     }
-    Vec3 light_dir = {0, 0, -1.0};
-    Vec3 eye = {1, 1, 3};
-    Vec3 center = {0, 0, 0};
-    Vec3 camera = {0, 0, 3.0};
-    Vec3 up = {0, 1, 0};
-
-    Mat4 Projection;
-    Mat4 ViewPort;
-    Mat4 ModelView;
-    Mat4 Transform;
-    projection(&Projection, camera[2]);
-    // identity(&Projection);
-    lookat(&ModelView, &eye, &center, &up);
-    // identity(&ModelView);
-    viewport(&ViewPort, 0, 0, w, h, depth);
-    Mat4 MP;
-    mulMM(&MP, &ModelView, &Projection);
-    mulMM(&Transform, &ViewPort, &MP);
 
     for (i = 0; i < model->nface; ++i) {
         int j;
-        Vec3 *vertex_coords;
-        Vec4 coords;
-        Vec4 proj_coords;
-        Vec3i screen_coords[3];
-        Vec3 world_coords[3];
-        Vec3 uv[3];
-        Vec3 intensity;
+        Vec3 screen_coords[3];
         for (j = 0; j < 3; ++j) {
-            vertex_coords = getVertex(model, i, j);
-            Vec3to4(&coords, vertex_coords);
-            mulMV(&proj_coords, &Transform, &coords);
-            Vec4to3(&world_coords[j], &proj_coords);
-            screen_coords[j][0] = world_coords[j][0];
-            screen_coords[j][1] = world_coords[j][1];
-            screen_coords[j][2] = world_coords[j][2];
-            cpy_vec3(&uv[j], getDiffuseUV(model, i, j));
-            intensity[j] = dot_prod(getNorm(model, i, j), &light_dir);
+            (*vs)(&screen_coords[j], i, j, shader);
         }
 
         triangle(screen_coords,
-                 uv,
-                 &intensity,
                  image,
+                 fs,
                  zbuffer,
-                 model);
+                 shader
+                 );
     }
 
     free(zbuffer);
@@ -169,11 +188,24 @@ int main(int argc, char const *argv[])
 
     int height = 800;
     int width = 800;
+    int depth = 255;
 
+    projection(&Projection, camera[2]);
+    lookat(&ModelView, &eye, &center, &up);
+    viewport(&ViewPort, 0, 0, width, height, depth);
+    Mat4 MP;
+    mulMM(&MP, &ModelView, &Projection);
+    mulMM(&Transform, &ViewPort, &MP);
+    
     tgaImage * image = tgaNewImage(height, width, RGB);
 
+    gouraud_shader shader;
+    shader.model = model;
     // meshgrid(image, model);
-    rasterize(image, model, /* depth = */ 255);
+    rasterize(image, model,
+              gouraud_vertex_shader,
+              gouraud_fragment_shader,
+              (void*)&shader);
 
     tgaFlipVertically(image);
     if (-1 == tgaSaveToFile(image, argv[3])) {

@@ -6,8 +6,7 @@
 #include <string.h>
 #include <math.h>
 
-#define MAX(a,b) ((a) > (b) ? a : b)
-#define MIN(a,b) ((a) < (b) ? a : b)
+
 
 void swap(void *a, void *b, size_t bytes)
 {
@@ -69,7 +68,7 @@ void line(unsigned int x1, unsigned int y1,
     }
 }
 
-void barycentric(Vec3 *bar, Vec3i *pts, Vec3i *p)
+void barycentric(Vec3 *bar, Vec3 *pts, Vec3i *p)
 {
     Vec3 v = {pts[2][0] - pts[0][0], pts[1][0] - pts[0][0], pts[0][0] - (*p)[0]};
     Vec3 w = {pts[2][1] - pts[0][1], pts[1][1] - pts[0][1], pts[0][1] - (*p)[1]};
@@ -84,11 +83,11 @@ void barycentric(Vec3 *bar, Vec3i *pts, Vec3i *p)
     }
 }
 
-void triangle(Vec3i *pts,
-              Vec3 *uv,
-              Vec3 *intty,
+void triangle(Vec3 *pts,
               tgaImage *image,
-              int *zbuffer, Model *model)
+              fragment_shader fs,
+              int *zbuffer,
+              void *shader)
 {
     Vec3i bboxmin = {image->width - 1, image->height - 1, 0};
     Vec3i bboxmax = {0, 0, 0};
@@ -117,17 +116,10 @@ void triangle(Vec3i *pts,
                 continue;
             }
             zbuffer[idx] = z;
-            double intensity = MAX(1.0 ,dot_prod(intty, &bc_screen));
-            Vec3 uvx = {uv[0][0], uv[1][0], uv[2][0]};
-            Vec3 uvy = {uv[0][1], uv[1][1], uv[2][1]};
-            Vec3 uv_coords = {dot_prod(&uvx, &bc_screen),
-                              dot_prod(&uvy, &bc_screen),
-                              0};
-            tgaColor color = getDiffuseColor(model, &uv_coords);
-
-            tgaSetPixel(image, P[0], P[1], tgaRGB(Red(color)*intensity,
-                                                  Green(color)*intensity,
-                                                  Blue(color)*intensity));
+            tgaColor color;
+            if ((*fs)(&color, &bc_screen, shader)) {
+                tgaSetPixel(image, P[0], P[1], color);
+            }
         }
     }
 }
