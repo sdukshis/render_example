@@ -4,6 +4,9 @@ LFLAGS = -lm
 
 .PHONY: all clean
 
+test: test_runner
+	./$<
+
 all: render convert
 
 convert: convert.o tga.o
@@ -28,6 +31,12 @@ geometry.o:geometry.c geometry.h
 	$(CC) -c $(CFLAGS) -o $@ $<
 
 convert.o:convert.c tga.h
+	$(CC) -c $(CFLAGS) -o $@ $<
+
+test_runner:test_geometry.o geometry.o
+	$(CC) $(LFLAGS) -o $@ $^
+
+test_geometry.o: test_geometry.c geometry.h	
 	$(CC) -c $(CFLAGS) -o $@ $<
 
 clean:

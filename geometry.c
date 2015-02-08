@@ -2,6 +2,7 @@
 
 #include <math.h>
 #include <assert.h>
+#include <string.h>
 
 double dot_prod(Vec3 *a, Vec3 *b)
 {
@@ -114,3 +115,105 @@ double getM(Mat4 *m, unsigned int i, unsigned int j)
     assert(j < 4);
     return (*m)[j + 4 * i];
 }
+
+void LU(Mat4 *A, unsigned int *P, int *signum)
+{
+    int i, j, k;
+    *signum = 1;
+    int N = 4;
+    for (i = 0; i < N; ++i) {
+        P[i] = i;
+    }
+
+    for (j = 0; j < N -1 ; ++j) {
+        double max = fabs(getM(A, j, j));
+        int i_pivot = j;
+
+        for (i = j + 1; i < N; ++i) {
+            double ajj = fabs(getM(A, i, j));
+            if (ajj > max) {
+                max = ajj;
+                i_pivot = i;
+            }
+        }
+
+        if (i_pivot != j) {
+            for (i = 0; i < N; ++i) {
+                double tmp = getM(A, j, i);
+                setM(A, j, i, getM(A, i_pivot, i));
+                setM(A, i_pivot, i, tmp);
+            }
+
+            int tmpi = P[j];
+            P[j] = P[i_pivot];
+            P[i_pivot] = tmpi;
+        }
+
+        double ajj = getM(A, j, j);
+        if (ajj != 0.0) {
+            for (i = j + 1; i < N; ++i) {
+                setM(A, i, j, getM(A, i, j)/ajj);
+                double aij = getM(A, i, j);
+                for (k = j + 1; k < N; ++k) {
+                    double aik = getM(A, i, k);
+                    double ajk = getM(A, j, k);
+                    setM(A, i, k, aik - aij * ajk);
+                }
+            }
+        }
+    }
+}
+
+void LU_solve(Mat4 *LU, Vec4 *x)
+{
+    int N = 4;
+    int i, j;
+    for (i = 0; i < N; ++i) {
+        for (j = 0; j < i; ++j) {
+            (*x)[i] -= getM(LU, i, j) * (*x)[j];
+        }
+    }
+    (*x)[N - 1] /= getM(LU, N - 1, N - 1);
+
+    for (i = N - 2; i >= 0; --i) {
+        for (j = N -1; j > i; --j) {
+            (*x)[i] -= getM(LU, i, j)*(*x)[j];
+        }
+        (*x)[i] /=getM(LU, i, i);
+    }
+}
+
+void shr(Vec4 *b)
+{
+    int i;
+    for (i = 3; i > 0; --i) {
+        (*b)[i] = (*b)[i - 1];
+    }
+    (*b)[0] = 0.0;
+}
+
+int inverse(Mat4 *invm, Mat4 *m)
+{
+    Mat4 lu;
+    memcpy(lu, *m, sizeof(Mat4));
+    unsigned int P[4] = {0, 0, 0, 0};
+    int signum = 0;
+    LU(&lu, P, &signum);
+
+    Vec4 b = {1.0, 0.0, 0.0, 0.0};
+    Vec4 bn;
+    int i, j;
+    for (i = 0; i < 4; ++i) {
+        for (j = 0; j < 4; ++j) {
+            bn[j] = b[P[j]];
+        }
+        LU_solve(&lu, &bn);
+        for (j = 0; j < 4; ++j) {
+            setM(invm, j, i, bn[j]);
+        }
+
+        shr(&b);
+    }
+    return 1;
+}
+

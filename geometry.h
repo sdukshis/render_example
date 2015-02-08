@@ -29,5 +29,9 @@ void setM(Mat4 *m, unsigned int i, unsigned int j, double val);
 
 double getM(Mat4 *m, unsigned int i, unsigned int j);
 
+void LU(Mat4 *A, unsigned int *P, int *signum);
 
+void LU_solve(Mat4 *LU, Vec4 *x);
+
+int inverse(Mat4 *invm, Mat4 *m);
 #endif  // GEOMETRY_H_
