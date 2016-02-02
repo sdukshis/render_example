@@ -64,7 +64,7 @@ tgaImage * tgaNewImage(unsigned int height, unsigned int width, int format)
         return NULL;
     }
 
-    bzero(image->data, data_size); /* TODO: explicit tgaColor? */
+    memset(image->data, 0, data_size); /* TODO: explicit tgaColor? */
 
     return image;
 }
