@@ -1,0 +1,15 @@
+version: 1.0.{build}
+
+clone_folder: c:\dev\render
+
+build_script:
+    - cd c:\dev\render
+    - md build
+    - cd build
+    - cmake -G"Visual Studio 14 2015 Win64" ..
+    - cmake --build . --config debug
+
+after_build:
+
+test_script:
+    - cmd: ctest -C Debug -VV
