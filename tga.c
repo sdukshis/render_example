@@ -169,11 +169,13 @@ tgaImage * tgaLoadFromFile(const char *filename)
     assert(filename);
     FILE *fd = fopen(filename, "r");
     if (!fd) {
+        fprintf(stderr, "Couldn't open %s\n", filename);
         return NULL;
     }
 
     struct tgaHeader header;
     if (1 != fread(&header, sizeof(header), 1, fd)) {
+        fprintf(stderr, "Couldn't read %lu bytes from %s\n", sizeof(header), filename);
         fclose(fd);
         return NULL;
     }
@@ -193,12 +195,14 @@ tgaImage * tgaLoadFromFile(const char *filename)
     if (header.image_type == 3 || header.image_type == 2) {
         unsigned int size = image->height * image->width * image->bpp;
         if (!fread(image->data, size, 1, fd)) {
+            fprintf(stderr, "Couldn't read %d bytes from %s\n", size, filename);
             tgaFreeImage(image);
             fclose(fd);
             return NULL;
         }
     } else if (header.image_type == 11 || header.image_type == 10) {
         if (-1 == loadRLE(image, fd)) {
+            fprintf(stderr, "Couldn't loadRLE");
             tgaFreeImage(image);
             fclose(fd);
             return NULL;
