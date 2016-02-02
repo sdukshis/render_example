@@ -4,7 +4,7 @@ project(render C)
 
 add_executable(${PROJECT_NAME} draw.c geometry.c main.c model.c tga.c)
 
-if(CMAKE_COMPILER_IS_GNUCC)
+if(UNIX)
     target_link_libraries(${PROJECT_NAME} m)
 endif()
 
