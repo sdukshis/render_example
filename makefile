@@ -1,5 +1,5 @@
-CC = clang
-CFLAGS = -g -Wall -pedantic
+CC = gcc
+CFLAGS = -g -Wall
 LFLAGS = -lm
 
 .PHONY: all clean
@@ -7,10 +7,10 @@ LFLAGS = -lm
 all: render convert
 
 convert: convert.o tga.o
-	$(CC) $(LFLAGS) -o $@ $^
+	$(CC)  -o $@ $^ $(LFLAGS)
 
 render: main.o tga.o draw.o model.o geometry.o
-	$(CC) $(LFLAGS) -o $@ $^
+	$(CC) -o $@ $^ $(LFLAGS)
 
 main.o: main.c tga.h draw.h model.h geometry.h
 	$(CC) -c $(CFLAGS) -o $@ $<
