@@ -7,8 +7,9 @@
 #include <string.h>
 #include <assert.h>
 
-#ifdef _WIN32
-typedef size_t ssize_t;
+#if defined(_MSC_VER)
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
 static ssize_t getline(char **lineptr, size_t *n, FILE *stream)
 {
     if (!*n) *lineptr = NULL;
